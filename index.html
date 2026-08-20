@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <title>记账报销助手</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:"Microsoft YaHei",system-ui,sans-serif}.app{max-width:720px;margin:auto;min-height:100vh;padding-bottom:90px}.hero{padding:26px 20px 24px;background:linear-gradient(135deg,#2563eb,#5b7cff);color:#fff;border-radius:0 0 28px 28px}.hero h1{margin:0 0 8px;font-size:26px}.hero p{margin:0;opacity:.88}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 14px}.stat,.card{background:#fff;border:1px solid #e7ebf3;border-radius:18px;box-shadow:0 8px 24px #23408b0d}.stat{padding:14px 8px;text-align:center}.stat strong{display:block;font-size:20px;color:#2459d3}.stat span{font-size:12px;color:#748096}.toolbar{display:flex;gap:8px;padding:0 14px 12px}.toolbar button,.filter{border:0;border-radius:12px;padding:10px 13px;background:#fff;color:#33415c;font-weight:600}.toolbar .active{background:#e8efff;color:#2459d3}.list{padding:0 14px;display:grid;gap:12px}.empty{text-align:center;padding:48px 20px;color:#8691a5}.item{padding:16px}.row{display:flex;justify-content:space-between;gap:12px}.item h3{margin:0 0 5px;font-size:17px}.amount{font-size:19px;font-weight:800;color:#172033}.meta{font-size:13px;color:#7b879b;line-height:1.8}.badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;background:#eef3ff;color:#3563d7}.badge.overdue{background:#ffeded;color:#d83b3b}.actions{display:flex;gap:8px;margin-top:13px}.actions button{flex:1;border:0;border-radius:10px;padding:9px;background:#edf2ff;color:#2856c5}.actions .danger{flex:0 0 auto;background:#fff0f0;color:#c33}.fab{position:fixed;right:max(20px,calc((100vw - 720px)/2 + 20px));bottom:22px;border:0;border-radius:18px;padding:15px 20px;background:#2563eb;color:#fff;font-size:16px;font-weight:700;box-shadow:0 12px 30px #2563eb55}.modal{position:fixed;inset:0;background:#11182780;display:none;align-items:flex-end;z-index:10}.modal.show{display:flex}.sheet{width:min(100%,720px);max-height:92vh;overflow:auto;margin:auto;background:#fff;border-radius:24px 24px 0 0;padding:22px 18px 30px}.sheet h2{margin:0 0 18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:grid;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:13px;color:#5d697d}.field input,.field select,.field textarea{width:100%;border:1px solid #dce2ec;border-radius:12px;padding:12px;font:inherit}.field textarea{min-height:72px;resize:vertical}.submit{width:100%;margin-top:18px;border:0;border-radius:13px;padding:14px;background:#2563eb;color:#fff;font-size:16px;font-weight:700}.cancel{width:100%;margin-top:8px;border:0;background:#fff;padding:12px;color:#667085}@media(max-width:440px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.hero{padding-top:22px}.stat strong{font-size:17px}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <section class="hero"><h1>记账报销助手</h1><p>买完立即记，报销不再忘</p></section>
+  <section class="stats">
+    <div class="stat"><strong id="pendingMoney">¥0.00</strong><span>待报销</span></div>
+    <div class="stat"><strong id="pendingCount">0</strong><span>待处理</span></div>
+    <div class="stat"><strong id="overdueCount">0</strong><span>已逾期</span></div>
+  </section>
+  <nav class="toolbar">
+    <button class="filter active" data-filter="all">全部</button><button class="filter" data-filter="待报销">待报销</button><button class="filter" data-filter="已提交">已提交</button><button class="filter" data-filter="已到账">已到账</button>
+  </nav>
+  <section class="list" id="list"></section>
+  <button class="fab" id="addBtn">＋ 记一笔</button>
+</main>
+<div class="modal" id="modal"><form class="sheet" id="form">
+  <h2>新增报销记录</h2><div class="grid">
+    <div class="field full"><label>购买内容 *</label><input name="title" required placeholder="例如：打印纸"></div>
+    <div class="field"><label>金额（元）*</label><input name="amount" required type="number" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="field"><label>购买日期 *</label><input name="date" required type="date"></div>
+    <div class="field"><label>报销截止日期</label><input name="deadline" type="date"></div>
+    <div class="field"><label>分类</label><select name="category"><option>办公用品</option><option>差旅</option><option>餐饮</option><option>交通</option><option>其他</option></select></div>
+    <div class="field"><label>项目或部门</label><input name="project" placeholder="选填"></div>
+    <div class="field"><label>票据照片</label><input name="receipt" type="file" accept="image/*,.pdf"></div>
+    <div class="field full"><label>备注</label><textarea name="note" placeholder="发票情况、报销说明等"></textarea></div>
+  </div><button class="submit">保存记录</button><button class="cancel" type="button" id="cancelBtn">取消</button>
+</form></div>
+<script>
+const KEY='baoxiao-helper-v1';let records=JSON.parse(localStorage.getItem(KEY)||'[]'),filter='all';
+const $=s=>document.querySelector(s),money=n=>'¥'+Number(n).toFixed(2),save=()=>{localStorage.setItem(KEY,JSON.stringify(records));render()};
+function overdue(r){return r.status!=='已到账'&&r.deadline&&r.deadline<new Date().toISOString().slice(0,10)}
+function render(){const shown=records.filter(r=>filter==='all'||r.status===filter);$('#list').innerHTML=shown.length?shown.map(r=>`<article class="card item"><div class="row"><div><h3>${esc(r.title)}</h3><span class="badge ${overdue(r)?'overdue':''}">${overdue(r)?'已逾期':r.status}</span></div><div class="amount">${money(r.amount)}</div></div><div class="meta">${esc(r.category)} · ${esc(r.date)}${r.deadline?' · 截止 '+esc(r.deadline):''}${r.project?' · '+esc(r.project):''}${r.receipt?' · 已附票据':''}${r.note?'<br>'+esc(r.note):''}</div><div class="actions">${r.status==='待报销'?`<button onclick="advance('${r.id}')">标记已提交</button>`:r.status==='已提交'?`<button onclick="advance('${r.id}')">确认已到账</button>`:'<button disabled>已完成</button>'}<button class="danger" onclick="removeItem('${r.id}')">删除</button></div></article>`).join(''):'<div class="empty">还没有记录<br>点击右下角“记一笔”开始使用</div>';
+const pending=records.filter(r=>r.status!=='已到账');$('#pendingMoney').textContent=money(pending.reduce((s,r)=>s+Number(r.amount),0));$('#pendingCount').textContent=pending.length;$('#overdueCount').textContent=pending.filter(overdue).length}
+function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}window.advance=id=>{const r=records.find(x=>x.id===id);r.status=r.status==='待报销'?'已提交':'已到账';save()};window.removeItem=id=>{if(confirm('确定删除这条记录吗？')){records=records.filter(x=>x.id!==id);save()}};
+$('.fab').onclick=()=>{$('#modal').classList.add('show');$('#form').date.value=new Date().toISOString().slice(0,10)};$('#cancelBtn').onclick=()=>$('#modal').classList.remove('show');document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});
+$('#form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),file=f.get('receipt');records.unshift({id:Date.now().toString(),title:f.get('title'),amount:f.get('amount'),date:f.get('date'),deadline:f.get('deadline'),category:f.get('category'),project:f.get('project'),note:f.get('note'),receipt:file&&file.name?file.name:'',status:'待报销'});e.target.reset();$('#modal').classList.remove('show');save()};render();
+</script>
+</body>
+</html>
