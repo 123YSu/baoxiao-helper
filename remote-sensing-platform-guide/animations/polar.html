@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>极轨道动画</title>
+<style>
+*{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07111f;color:#eef6ff;font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",Arial,sans-serif}
+body{background:radial-gradient(circle at 70% 35%,#163259 0,#0b1b31 34%,#07111f 72%)} 
+.stage{position:relative;width:100vw;height:100vh;min-height:560px;display:grid;grid-template-rows:auto 1fr auto}
+.header{z-index:10;padding:28px 42px 10px;display:flex;justify-content:space-between;gap:24px;align-items:flex-start}
+.kicker{font-size:14px;letter-spacing:.2em;color:#76c9ff;font-weight:700;margin-bottom:8px}
+h1{font-size:clamp(30px,4vw,58px);line-height:1.1;margin:0;font-weight:800}
+.sub{margin-top:12px;color:#b8cce2;font-size:clamp(15px,1.5vw,21px)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+button,a.btn{border:1px solid rgba(150,205,255,.35);background:rgba(10,31,55,.72);color:#eef6ff;border-radius:999px;padding:10px 16px;font-size:14px;cursor:pointer;text-decoration:none;backdrop-filter:blur(8px)}
+button:hover,a.btn:hover{background:rgba(35,77,120,.72)}
+.visual{position:relative;min-height:0}
+svg{width:100%;height:100%;display:block}
+.footer{z-index:10;padding:8px 42px 26px;display:flex;justify-content:space-between;align-items:end;gap:28px;color:#b9c9da}
+.fact{max-width:920px;font-size:14px;line-height:1.75;padding:12px 16px;border-left:3px solid #58bfff;background:rgba(7,17,31,.45);border-radius:0 10px 10px 0}
+.source{font-size:12px;opacity:.72;text-align:right;white-space:nowrap}
+.scene-label{fill:#d7e9fb;font-size:28px;font-weight:700;paint-order:stroke;stroke:#07111f;stroke-width:6px;stroke-linejoin:round}
+.earth-img{transform-origin:800px 485px;animation:earthRotate 18s linear infinite}
+.sensor{filter:drop-shadow(0 0 12px rgba(104,214,255,.3))}
+.ground-beam{transform-origin:360px 420px;animation:groundSweep 4s ease-in-out infinite alternate}
+.scan-spot{animation:spotMove 4s ease-in-out infinite alternate;filter:drop-shadow(0 0 12px #7cf7c1)}
+.samples circle{animation:pulse 2.5s ease-in-out infinite}
+.mover-air{animation:airMove 9s linear infinite}
+.air-beam{animation:airBeam 9s linear infinite}
+.swath{animation:swathPulse 3s ease-in-out infinite}
+.orbit-space{transform-origin:800px 485px;animation:orbitSpace 11s linear infinite}
+.space-beam,.earth-spot{animation:beamPulse 1.8s ease-in-out infinite}
+.fixed-spot{animation:pulse 2s ease-in-out infinite}
+.orbit-sun{transform-origin:800px 485px;animation:orbitSun 8s linear infinite}
+.orbit-polar{transform-origin:800px 485px;animation:orbitPolar 7s linear infinite}
+.coverage{animation:coverageShift 6s ease-in-out infinite alternate}
+.sun{filter:drop-shadow(0 0 35px rgba(255,200,90,.65));animation:sunPulse 3s ease-in-out infinite}
+@keyframes earthRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes groundSweep{from{transform:rotate(-10deg)}to{transform:rotate(16deg)}}
+@keyframes spotMove{from{transform:translateX(-90px)}to{transform:translateX(150px)}}
+@keyframes pulse{0%,100%{opacity:.45;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes airMove{0%{transform:translate(110px,255px)}100%{transform:translate(1390px,255px)}}
+@keyframes airBeam{0%{transform:translateX(0);opacity:.2}20%{opacity:.6}80%{opacity:.6}100%{transform:translateX(1070px);opacity:.2}}
+@keyframes swathPulse{0%,100%{opacity:.12}50%{opacity:.42}}
+@keyframes orbitSpace{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes beamPulse{0%,100%{opacity:.28}50%{opacity:.85}}
+@keyframes orbitSun{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes orbitPolar{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes coverageShift{from{transform:translateX(-35px);opacity:.55}to{transform:translateX(35px);opacity:1}}
+@keyframes sunPulse{0%,100%{opacity:.85}50%{opacity:1}}
+body.paused *,body.paused *::before,body.paused *::after{animation-play-state:paused!important}
+@media(max-width:800px){.header{padding:20px 20px 6px}.footer{padding:6px 20px 18px;display:block}.source{text-align:left;margin-top:8px}.controls{position:absolute;right:18px;top:18px}.controls .text{display:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <header class="header">
+    <div><div class="kicker">POLAR ORBIT</div><h1>极轨道动画</h1><div class="sub">近南北方向运行 · 多圈覆盖</div></div>
+    <div class="controls">
+      <button id="toggle">暂停</button>
+      <button id="restart">重新播放</button>
+      <button id="full">全屏</button>
+      <a class="btn text" href="./">动画目录</a>
+    </div>
+  </header>
+  <main class="visual">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet" aria-label="极轨道动画">
+      <defs>
+        <linearGradient id="beamGrad" x1="0" x2="1"><stop offset="0" stop-color="#68d6ff"/><stop offset="1" stop-color="#7cf7c1"/></linearGradient>
+        <radialGradient id="glow"><stop offset="0" stop-color="#4fbfff" stop-opacity=".25"/><stop offset="1" stop-color="#4fbfff" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="800" cy="450" r="560" fill="url(#glow)"/>
+      
+    <g>
+    <defs><clipPath id="earthClip"><circle cx="800" cy="485" r="220"/></clipPath></defs>
+    <circle cx="800" cy="485" r="228" fill="#102645" stroke="#5cb8ff" stroke-width="3" opacity=".95"/>
+    <image href="../remote-sensing/earth-blue-marble-real.webp" x="575" y="260" width="450" height="450" preserveAspectRatio="xMidYMid slice" clip-path="url(#earthClip)" class="earth-img"/>
+    <circle cx="800" cy="485" r="220" fill="none" stroke="rgba(135,211,255,.35)" stroke-width="12"/>
+    <ellipse cx="800" cy="485" rx="220" ry="58" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+    <path d="M580 485 H1020" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+      <ellipse cx="800" cy="485" rx="245" ry="430" fill="none" stroke="rgba(124,247,193,.52)" stroke-width="4"/>
+      <g class="orbit-polar"><g transform="translate(800 55) scale(.82)">
+    <g class="satellite">
+      <rect x="-40" y="-20" width="80" height="40" rx="8" fill="#f2f6ff" stroke="#9ec8ff" stroke-width="3"/>
+      <rect x="-115" y="-14" width="65" height="28" rx="3" fill="#2f6ec8" stroke="#7eb4ff" stroke-width="3"/>
+      <rect x="50" y="-14" width="65" height="28" rx="3" fill="#2f6ec8" stroke="#7eb4ff" stroke-width="3"/>
+      <circle cx="0" cy="0" r="8" fill="#ffb84d"/>
+      <path d="M0,-20 L0,-46" stroke="#dcecff" stroke-width="4"/>
+      <circle cx="0" cy="-51" r="7" fill="none" stroke="#dcecff" stroke-width="3"/>
+    </g></g></g>
+      <g class="coverage">
+        <path d="M690 300 Q800 350 910 300" stroke="#7cf7c1" stroke-width="7" opacity=".22"/>
+        <path d="M655 370 Q800 430 945 370" stroke="#7cf7c1" stroke-width="7" opacity=".18"/>
+        <path d="M635 455 Q800 520 965 455" stroke="#7cf7c1" stroke-width="7" opacity=".16"/>
+        <path d="M650 545 Q800 605 950 545" stroke="#7cf7c1" stroke-width="7" opacity=".14"/>
+        <path d="M690 630 Q800 680 910 630" stroke="#7cf7c1" stroke-width="7" opacity=".12"/>
+      </g>
+      <text x="1055" y="300" class="scene-label">近南北方向运行</text>
+      <text x="1060" y="350" class="scene-label">地球自转 → 相邻航带</text>
+    </g>
+    </svg>
+  </main>
+  <footer class="footer"><div class="fact">教材第3章轨道部分：极轨道接近南北方向运行，结合地球自转可逐步覆盖不同区域。</div><div class="source">依据：《遥感原理与应用（第二版）》第三章“遥感平台与传感器”</div></footer>
+</div>
+<script>
+const b=document.body,t=document.getElementById('toggle');
+t.onclick=()=>{b.classList.toggle('paused');t.textContent=b.classList.contains('paused')?'播放':'暂停'};
+document.getElementById('restart').onclick=()=>{document.querySelector('.visual').style.display='none';void document.body.offsetHeight;document.querySelector('.visual').style.display='block';b.classList.remove('paused');t.textContent='暂停'};
+document.getElementById('full').onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()};
+document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();t.click()}if(e.key.toLowerCase()==='f')document.getElementById('full').click()});
+</script>
+</body></html>
